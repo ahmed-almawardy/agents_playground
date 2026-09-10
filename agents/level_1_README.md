@@ -93,10 +93,10 @@ WIKI_CRAWLER_USER_AGENT=TravelInfoAgent/1.0 (contact@example.com)
 
 ```text
 .
-├── agents/simple_agent_1.py                     # Primary script containing graph logic & CLI loop
+├── agents/level_1.py                     # Primary script containing graph logic & CLI loop
 ├── .env                        # Environment variable specifications
 └── data/                       # Chroma DB persistence directory (auto-created)
-    └── travel_agenet_collections/
+    └── level_1/
 ```
 
 ---
@@ -106,7 +106,7 @@ WIKI_CRAWLER_USER_AGENT=TravelInfoAgent/1.0 (contact@example.com)
 Run the agent script directly:
 
 ```bash
-python3 simple_agent_1.py
+python3 level_1.py
 ```
 
 * On initial execution, the script automatically fetches Wikivoyage documents for configured locations (default: `Cornwall`), embeds them, and persists the vector database.
@@ -116,7 +116,6 @@ python3 simple_agent_1.py
 
 ```text
 Waiting DB..
-len(chunks)=42
 DB Done..
 mini Travel Assistant (type 'exit' to quit)
 You: What are the main attractions in Cornwall?

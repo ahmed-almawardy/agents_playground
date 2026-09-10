@@ -3,6 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/models" />
+      <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/.jbeval" />
+      <excludeFolder url="file://$MODULE_DIR$/data/level_1" />
     </content>
     <orderEntry type="jdk" jdkName="uv (agents_playground)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -25,7 +25,7 @@ load_dotenv(verbose=True)
 
 llm = ChatOllama(model=os.environ.get("LLM_MODEL", ""), temperature=0.4)
 embeddings_model = OllamaEmbeddings(model=os.environ.get('EMBEDDING_MODEL', ''))
-data_dir = Path("../data") / "travel_agenet_collections"
+data_dir = Path("../data") / "level_1"
 
 
 vectorstore_client = None
