@@ -26,6 +26,6 @@ if  __name__ == '__main__':
     mcp.run(
         transport='streamable-http',
         host='localhost',
-        port='8020',
+        port=8020,
         path='/weatherapi-mcp-server'
     )
