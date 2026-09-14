@@ -33,13 +33,12 @@ load_dotenv(verbose=True)
 
 
 llm = ChatOllama(model=os.environ.get("LLM_MODEL", ""), temperature=0.4)
-embeddings_model = OllamaEmbeddings(model=os.environ.get('EMBEDDING_MODEL', ''))
+embeddings_model = OllamaEmbeddings(model=os.environ.get("EMBEDDING_MODEL", ""))
 data_dir = Path("../data") / "level_1"
 
 
 vectorstore_client = None
 tasks = set()
-
 
 
 def get_travel_info_vectorstore() -> Chroma:
@@ -60,8 +59,12 @@ async def getting_docs(from_: list[str]):
 
 def build_vectorstore(docs) -> Chroma:
     """Download WikiVoyage pages and create a Chroma vector store."""
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
-    chunks = functools.reduce(operator.iadd, [splitter.split_documents([d]) for d in docs], [])
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1024, chunk_overlap=128
+    )
+    chunks = functools.reduce(
+        operator.iadd, [splitter.split_documents([d]) for d in docs], []
+    )
     print("Waiting DB..")
     db = get_chroma(chunks)
     db.add_documents(chunks)
@@ -101,23 +104,24 @@ def search_travel_info(query: str) -> str:
 
 
 @tool
-def get_weather(for_alocation: str, at_datetime: datetime =  None):
+def get_weather(for_alocation: str, at_datetime: datetime = None):
     """Get Weather Tool:
-        Used to retrieve weather information for a specific location on a specific date. 
-        The location can be a town, city, or similar region, followed by the country, separated by a comma.
-        if user specificed a date pass it to the tool, if not pass the current date
-        Examples:
-        Cairo, Egypt
-        London, England
-        Moscow, Russia
+    Used to retrieve weather information for a specific location on a specific date.
+    The location can be a town, city, or similar region, followed by the country, separated by a comma.
+    if user specificed a date pass it to the tool, if not pass the current date
+    Examples:
+    Cairo, Egypt
+    London, England
+    Moscow, Russia
     """
-    if not at_datetime: at_datetime = datetime.now()
+    if not at_datetime:
+        at_datetime = datetime.now()
     url = f"https://api.weatherapi.com/v1/current.json?key={os.environ.get('WEATHERAPI_KEY')}&q={for_alocation}&dt={at_datetime}"
     response = requests.get(url, json=True)
     try:
         response.raise_for_status()
     except:
-        return {'error': "can't retrieve the forcast for this location"}
+        return {"error": "can't retrieve the forcast for this location"}
     return response.json()
 
 
@@ -138,12 +142,14 @@ class AgentState(TypedDict):
 
 def llm_node(agent_state: AgentState):
     """LLM node that decides whether to call the search tool."""
-    system_message = SystemMessage(content="""You are a helpful assistant
+    system_message = SystemMessage(
+        content="""You are a helpful assistant
     that can search travel information and get the weather forecast.
-    Only use the tools to find the information you need (including town names).""")
-    agent_state['messages'].append(system_message)
-    response = llm.invoke(agent_state['messages'])
-    return {'messages': [response]}
+    Only use the tools to find the information you need (including town names)."""
+    )
+    agent_state["messages"].append(system_message)
+    response = llm.invoke(agent_state["messages"])
+    return {"messages": [response]}
 
 
 tool_exec_node = ToolNode(TOOLS)

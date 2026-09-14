@@ -5,25 +5,26 @@
 import functools
 import operator
 import os
+import time
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, TypedDict, Literal
+from typing import Annotated, Literal, TypedDict
 
 import requests
 from dotenv import load_dotenv
+from langchain.agents import create_agent
 from langchain_chroma.vectorstores import Chroma
 from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncHtmlLoader
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
-    ToolMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain.agents import create_agent
 
 from agents._helpers import run_coro
 
@@ -31,13 +32,12 @@ load_dotenv(verbose=True)
 
 
 llm = ChatOllama(model=os.environ.get("LLM_MODEL", ""), temperature=0.4)
-embeddings_model = OllamaEmbeddings(model=os.environ.get('EMBEDDING_MODEL', ''))
+embeddings_model = OllamaEmbeddings(model=os.environ.get("EMBEDDING_MODEL", ""))
 data_dir = Path("../data") / "level_1"
 
 
 vectorstore_client = None
 tasks = set()
-
 
 
 def get_travel_info_vectorstore() -> Chroma:
@@ -58,22 +58,30 @@ async def getting_docs(from_: list[str]):
 
 def build_vectorstore(docs) -> Chroma:
     """Download WikiVoyage pages and create a Chroma vector store."""
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
-    chunks = functools.reduce(operator.iadd, [splitter.split_documents([d]) for d in docs], [])
-    print("Waiting DB..")
-    db = get_chroma(chunks)
-    db.add_documents(chunks)
-    print("DB Done..")
-    return db
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1024, chunk_overlap=128
+    )
+    chunks = functools.reduce(
+        operator.iadd, [splitter.split_documents([d]) for d in docs], []
+    )
+    return get_chroma(chunks)
 
 
 def get_chroma(chunks):
+    started = time.perf_counter()
+    print("Track Chroma Starting and embedding docs: [started]")
     vectorstore = Chroma(
         embedding_function=embeddings_model,
         persist_directory=data_dir,
     )
-    if not data_dir.exists():
+    ended = time.perf_counter() - started
+    print(f"Track Chroma Starting and embedding docs: [end] Took: {ended:.4f}")
+    if vectorstore._collection.count() == 0:
+        started = time.perf_counter()
+        print("Track Chroma Starting adding docs: [started]")
         vectorstore.add_documents(chunks)
+        ended = time.perf_counter() - started
+        print(f"Track Chroma Starting adding docs: [end] Took: {ended:.4f}")
     return vectorstore
 
 
@@ -99,23 +107,24 @@ def search_travel_info(query: str) -> str:
 
 
 @tool
-def get_weather(for_alocation: str, at_datetime: datetime =  None):
+def get_weather(for_alocation: str, at_datetime: datetime = None):
     """Get Weather Tool:
-        Used to retrieve weather information for a specific location on a specific date. 
-        The location can be a town, city, or similar region, followed by the country, separated by a comma.
-        if user specificed a date pass it to the tool, if not pass the current date
-        Examples:
-        Cairo, Egypt
-        London, England
-        Moscow, Russia
+    Used to retrieve weather information for a specific location on a specific date.
+    The location can be a town, city, or similar region, followed by the country, separated by a comma.
+    if user specificed a date pass it to the tool, if not pass the current date
+    Examples:
+    Cairo, Egypt
+    London, England
+    Moscow, Russia
     """
-    if not at_datetime: at_datetime = datetime.now()
+    if not at_datetime:
+        at_datetime = datetime.now()
     url = f"https://api.weatherapi.com/v1/current.json?key={os.environ.get('WEATHERAPI_KEY')}&q={for_alocation}&dt={at_datetime}"
     response = requests.get(url, json=True)
     try:
         response.raise_for_status()
     except:
-        return {'error': "can't retrieve the forcast for this location"}
+        return {"error": "can't retrieve the forcast for this location"}
     return response.json()
 
 
@@ -138,7 +147,8 @@ travel_info_agent = create_agent(
     tools=TOOLS,
     system_prompt="""You are a helpful assistant
     that can search travel information and get the weather forecast.
-    Only use the tools to find the information you need (including town names).""")
+    Only use the tools to find the information you need (including town names).""",
+)
 
 
 def chat_loop():  # A

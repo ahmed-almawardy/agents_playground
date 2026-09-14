@@ -24,7 +24,7 @@ from langgraph.prebuilt import tools_condition
 load_dotenv(verbose=True)
 
 llm = ChatOllama(model=os.environ.get("LLM_MODEL", ""), temperature=0.4)
-embeddings_model = OllamaEmbeddings(model=os.environ.get('EMBEDDING_MODEL', ''))
+embeddings_model = OllamaEmbeddings(model=os.environ.get("EMBEDDING_MODEL", ""))
 data_dir = Path("../data") / "level_1"
 
 
@@ -43,7 +43,9 @@ def run_coro(tasks):
     threads = []
     results = []
     for task in tasks:
-        thread = threading.Thread(target=run_inew_loop, args=[loop, task, results])
+        thread = threading.Thread(
+            target=run_inew_loop, args=[loop, task, results]
+        )
         threads.append(thread)
     for thread in threads:
         thread.start()
@@ -69,8 +71,12 @@ async def getting_docs(from_: list[str]):
 
 def build_vectorstore(docs) -> Chroma:
     """Download WikiVoyage pages and create a Chroma vector store."""
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
-    chunks = functools.reduce(operator.iadd, [splitter.split_documents([d]) for d in docs], [])
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1024, chunk_overlap=128
+    )
+    chunks = functools.reduce(
+        operator.iadd, [splitter.split_documents([d]) for d in docs], []
+    )
     print("Waiting DB..")
     db = get_chroma(chunks)
     db.add_documents(chunks)
@@ -133,7 +139,9 @@ class ToolExecutionNode:
             tool = self._tools.get(tool_name)
             response = tool.invoke(tool_call.get("args"))
             message = ToolMessage(
-                tool_call_id=tool_call.get("id"), content=response, name=tool_name
+                tool_call_id=tool_call.get("id"),
+                content=response,
+                name=tool_name,
             )
             tool_messages.append(message)
         return {"messages": tool_messages}

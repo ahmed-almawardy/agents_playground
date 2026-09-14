@@ -13,7 +13,9 @@ def run_coro(tasks):
     threads = []
     results = []
     for task in tasks:
-        thread = threading.Thread(target=run_inew_loop, args=[loop, task, results])
+        thread = threading.Thread(
+            target=run_inew_loop, args=[loop, task, results]
+        )
         threads.append(thread)
     for thread in threads:
         thread.start()

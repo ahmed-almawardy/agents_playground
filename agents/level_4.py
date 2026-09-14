@@ -31,9 +31,11 @@ load_dotenv(verbose=True)
 BASE_DIRE = Path(os.getcwd()).parent
 
 llm = ChatOllama(model=os.environ.get("LLM_MODEL", ""), temperature=0.4)
-embeddings_model = OllamaEmbeddings(model=os.environ.get('EMBEDDING_MODEL', ''))
+embeddings_model = OllamaEmbeddings(model=os.environ.get("EMBEDDING_MODEL", ""))
 data_dir = Path("../data") / "level_1"
-hotel_db = SQLDatabase.from_uri(f'sqlite:///{BASE_DIRE}/data/hotel_data/cornwall_hotels.db')
+hotel_db = SQLDatabase.from_uri(
+    f"sqlite:///{BASE_DIRE}/data/hotel_data/cornwall_hotels.db"
+)
 hotel_db_toolkit = SQLDatabaseToolkit(db=hotel_db, llm=llm)
 
 vectorstore_client = None
@@ -301,18 +303,19 @@ accommodation_booking_agent = create_agent(
     destination in Cornwall. You can use the tools to 
     get the information you need. If the users does 
     not specify the accommodation type, you should 
-    check both hotels and BnBs."""
+    check both hotels and BnBs.""",
 )
 
 
 class AgentType(str, Enum):
-    travel_info_agent = 'travel_info_agent'
-    accommodation_booking_agent = 'accommodation_booking_agent'
+    travel_info_agent = "travel_info_agent"
+    accommodation_booking_agent = "accommodation_booking_agent"
 
 
 class AgentTypeOutput(BaseModel):
-    agent: AgentType = Field(..., description="Which agent should handle the question")
-
+    agent: AgentType = Field(
+        ..., description="Which agent should handle the question"
+    )
 
 
 ROUTER_SYSTEM_PROMPT = (
@@ -330,9 +333,10 @@ ROUTER_SYSTEM_PROMPT = (
 
 llm_router = llm.with_structured_output(AgentTypeOutput)
 
+
 def router_agent_node(agent_state: AgentState):
     """Router node: decides which agent should the user query"""
-    messages = agent_state['messages']
+    messages = agent_state["messages"]
     last_message = messages[-1] if messages else None
     if isinstance(last_message, HumanMessage):
         user_query = last_message.content
@@ -346,15 +350,15 @@ def router_agent_node(agent_state: AgentState):
 
 
 router_agent = StateGraph(AgentState)
-router_agent.add_node('router_agent', router_agent_node)
-router_agent.add_node('travel_info_agent', travel_info_agent)
-router_agent.add_node('accommodation_booking_agent', accommodation_booking_agent)
-router_agent.add_edge('travel_info_agent', END)
-router_agent.add_edge('accommodation_booking_agent', END)
-router_agent.set_entry_point('router_agent')
+router_agent.add_node("router_agent", router_agent_node)
+router_agent.add_node("travel_info_agent", travel_info_agent)
+router_agent.add_node(
+    "accommodation_booking_agent", accommodation_booking_agent
+)
+router_agent.add_edge("travel_info_agent", END)
+router_agent.add_edge("accommodation_booking_agent", END)
+router_agent.set_entry_point("router_agent")
 router_agent = router_agent.compile()
-
-
 
 
 def chat_loop():  # A
@@ -367,8 +371,6 @@ def chat_loop():  # A
         result = router_agent.invoke(state)
         response_msg = result["messages"][-1]
         print(f"Assistant: {response_msg.content}\n")
-
-
 
 
 if __name__ == "__main__":
