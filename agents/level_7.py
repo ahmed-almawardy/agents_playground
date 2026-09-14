@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
-from langgraph.graph import StateGraph
+from langgraph.graph import MessagesState, StateGraph
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
@@ -20,8 +20,8 @@ from agents.level_4 import (
 )
 
 
-class AgentState(TypedDict):
-    messages: list[str]
+class AgentState(MessagesState):
+    pass
 
 
 class AgentTypes(str, Enum):
@@ -61,7 +61,8 @@ def draw_graph():
     graph.add_edge("travel_info_agent", END)
     graph.add_edge("accommodation_booking_agent", END)
     graph.set_entry_point("router_agent")
-    return graph.compile(checkpointer=InMemorySaver())
+    checkpointer = InMemorySaver()
+    return graph.compile(checkpointer=checkpointer)
 
 
 async def chat():
@@ -77,7 +78,7 @@ async def chat():
         if human_message.content in {"exit", "quit"}:
             sys.exit(0)
         agent_state = {"messages": [human_message]}
-        response = await agent.ainvoke(agent_state, config=config)
+        response = await agent.ainvoke(agent_state, config)
         print(f"AI # {response['messages'][-1].content}")
 
 
